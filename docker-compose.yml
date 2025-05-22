@@ -10,7 +10,7 @@ services:
       POSTGRES_DB: appdb
     volumes:
       - pg_primary_data:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+      - ./init:/docker-entrypoint-initdb.d
     networks: [supanet]
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "admin"]
