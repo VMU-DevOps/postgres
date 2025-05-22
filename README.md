@@ -12,6 +12,8 @@ Kho này chứa cấu hình Docker Compose để triển khai cụm PostgreSQL 1
 2. Đảm bảo các tệp `init-primary.sh` và `init-replica.sh` nằm trong cùng thư mục với tệp Compose.
 3. Kết nối đến Pgpool-II qua cổng `9999` để thực hiện các truy vấn được cân bằng tải.
 
-## Lưu Ý
-- Thay mật khẩu mặc định (`postgres`) bằng mật khẩu an toàn trong môi trường sản xuất.
-- Điều chỉnh giá trị `PGPOOL_BACKEND_WEIGHT` trong `docker-compose.yml` để tùy chỉnh phân phối tải.
+## Kiểm Tra Trạng Thái
+- Tất cả các dịch vụ có `healthcheck` sử dụng `pg_isready` (cho PostgreSQL) hoặc `pgpool` (cho Pgpool-II).
+- Xem trạng thái trong Portainer hoặc chạy lệnh:
+  ```bash
+  docker ps
