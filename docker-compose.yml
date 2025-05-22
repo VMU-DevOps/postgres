@@ -116,6 +116,21 @@ services:
       timeout: 5s
       retries: 5
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "15050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - pg-net
+
+
 networks:
   pg-net:
     driver: bridge
@@ -125,3 +140,4 @@ volumes:
   replica1-data:
   replica2-data:
   replica3-data:
+  pgadmin_data:
