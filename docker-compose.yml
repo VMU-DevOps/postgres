@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: strongpass
-      POSTGRES_DB: appdb
+      POSTGRES_DB: admin
     volumes:
       - pg_primary_data:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d
