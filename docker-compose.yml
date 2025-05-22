@@ -4,7 +4,7 @@ services:
   pgpool:
     image: bitnami/pgpool:4
     ports:
-      - "9999:9999"
+      - "15432:15432"
     environment:
       - PGPOOL_POSTGRES_USERNAME=postgres
       - PGPOOL_POSTGRES_PASSWORD=postgres
@@ -15,7 +15,7 @@ services:
       - PGPOOL_SR_CHECK_USER=postgres
       - PGPOOL_SR_CHECK_PASSWORD=postgres
     volumes:
-      - ./pgpool-conf:/opt/bitnami/pgpool/conf
+      - ./configs/pgpool.conf:/opt/bitnami/pgpool/conf/pgpool.conf
     depends_on:
       primary:
         condition: service_healthy
@@ -45,8 +45,6 @@ services:
     volumes:
       - primary-data:/var/lib/postgresql/data
       - ./init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh
-    ports:
-      - "5432"
     networks:
       - pg-net
     healthcheck:
@@ -68,8 +66,6 @@ services:
     depends_on:
       primary:
         condition: service_healthy
-    ports:
-      - "5432"
     networks:
       - pg-net
     healthcheck:
@@ -91,8 +87,6 @@ services:
     depends_on:
       primary:
         condition: service_healthy
-    ports:
-      - "5432"
     networks:
       - pg-net
     healthcheck:
@@ -114,8 +108,6 @@ services:
     depends_on:
       primary:
         condition: service_healthy
-    ports:
-      - "5432"
     networks:
       - pg-net
     healthcheck:
