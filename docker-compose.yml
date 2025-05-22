@@ -1,37 +1,120 @@
-services:
-  postgres-db:
-    image: postgres:${POSTGRES_VERSION:-17}
-    container_name: postgres-db
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1}
-      POSTGRES_DB: ${POSTGRES_DB:-system}
-      TZ: ${TZ:-Asia/Ho_Chi_Minh}
-      POSTGRES_INITDB_ARGS: "--timezone=${TZ:-Asia/Ho_Chi_Minh}"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./data/backups:/backups
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+version: "3.9"
 
-  postgres-ui:
-    image: dpage/pgadmin4
-    container_name: postgres-ui
-    restart: always
+services:
+  postgres-primary:
+    image: postgres:17
+    container_name: postgres-primary
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@vimaru.edu.vn}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-1}
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: strongpass
+      POSTGRES_DB: appdb
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
-      - ./data/backups:/backups
-      - ./pgadmin-init.sh:/pgadmin-init.sh
+      - pg_primary_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    networks: [supanet]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica1:
+    image: postgres:17
+    container_name: postgres-replica1
+    depends_on: [postgres-primary]
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: strongpass
+    command: >
+      bash -c "
+        until pg_isready -h postgres-primary -U admin; do sleep 2; done &&
+        pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U admin -Fp -Xs -P -R"
+    volumes:
+      - pg_replica1_data:/var/lib/postgresql/data
+    networks: [supanet]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica2:
+    image: postgres:17
+    container_name: postgres-replica2
+    depends_on: [postgres-primary]
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: strongpass
+    command: >
+      bash -c "
+        until pg_isready -h postgres-primary -U admin; do sleep 2; done &&
+        pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U admin -Fp -Xs -P -R"
+    volumes:
+      - pg_replica2_data:/var/lib/postgresql/data
+    networks: [supanet]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-replica3:
+    image: postgres:17
+    container_name: postgres-replica3
+    depends_on: [postgres-primary]
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: strongpass
+    command: >
+      bash -c "
+        until pg_isready -h postgres-primary -U admin; do sleep 2; done &&
+        pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U admin -Fp -Xs -P -R"
+    volumes:
+      - pg_replica3_data:/var/lib/postgresql/data
+    networks: [supanet]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgpool:
+    image: bitnami/pgpool:4
+    environment:
+      PGPOOL_BACKEND_NODES: 0:postgres-primary:5432,1:postgres-replica1:5432,2:postgres-replica2:5432,3:postgres-replica3:5432
+      PGPOOL_SR_CHECK_USER: admin
+      PGPOOL_SR_CHECK_PASSWORD: strongpass
+      PGPOOL_POSTGRES_USERNAME: admin
+      PGPOOL_POSTGRES_PASSWORD: strongpass
+      PGPOOL_ADMIN_USERNAME: admin
+      PGPOOL_ADMIN_PASSWORD: admin123
     ports:
-      - "${PGADMIN_PORT:-5431}:80"
-    depends_on:
-      - postgres-db
-    command: ["/bin/sh", "-c", "echo ✅ Đã chạy command! && /bin/sh /pgadmin-init.sh"]
+      - "5432:5432"
+    networks: [supanet]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432 -U admin || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks: [supanet]
 
 volumes:
-  postgres-data:
-  pgadmin-data:
+  pg_primary_data:
+  pg_replica1_data:
+  pg_replica2_data:
+  pg_replica3_data:
+  pgadmin_data:
+
+networks:
+  supanet:
+    driver: bridge
