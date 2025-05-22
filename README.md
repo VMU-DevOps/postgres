@@ -1,39 +1,17 @@
-# pgAdmin + PostgreSQL Docker Stack with Backup Symlink
+# Cụm PostgreSQL 17 Cân Bằng Tải
 
-## ✅ Features
+Kho này chứa cấu hình Docker Compose để triển khai cụm PostgreSQL 17 với 1 node primary và 3 node replica, được cân bằng tải bằng Pgpool-II. Cấu hình này được thiết kế để triển khai qua Portainer.
 
-- PostgreSQL with configurable version and timezone
-- pgAdmin 4 auto-creates symlink to `/backups`
-- Can restore `.backup` files directly from pgAdmin UI
+## Các Tệp
+- `docker-compose.yml`: Định nghĩa các dịch vụ primary, replica và Pgpool-II.
+- `init-primary.sh`: Cấu hình node primary cho replication.
+- `init-replica.sh`: Cấu hình các node replica cho streaming replication.
 
-## 🧾 Environment Variables
+## Hướng Dẫn Cài Đặt
+1. Triển khai stack trong Portainer bằng tệp `docker-compose.yml`.
+2. Đảm bảo các tệp `init-primary.sh` và `init-replica.sh` nằm trong cùng thư mục với tệp Compose.
+3. Kết nối đến Pgpool-II qua cổng `9999` để thực hiện các truy vấn được cân bằng tải.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| POSTGRES_VERSION | 17 | PostgreSQL version |
-| POSTGRES_USER | admin | DB username |
-| POSTGRES_PASSWORD | 1 | DB password |
-| POSTGRES_DB | system | DB name |
-| TZ | Asia/Ho_Chi_Minh | Timezone |
-| POSTGRES_PORT | 5432 | Host port for PostgreSQL |
-| PGADMIN_EMAIL | admin@vimaru.edu.vn | pgAdmin login email |
-| PGADMIN_PASSWORD | 1 | pgAdmin password |
-| PGADMIN_PORT | 5431 | Host port for pgAdmin |
-| PGADMIN_USER_DIR | admin_vimaru.edu.vn | pgAdmin user folder |
-
-## 🚀 Usage
-
-```bash
-docker compose --env-file .env up -d
-docker logs postgres-ui
-```
-
-## 🔁 Restore in pgAdmin
-
-In the Restore dialog, browse to:
-
-```
-/var/lib/pgadmin/storage/admin_vimaru.edu.vn/backups_link/
-```
-
-Then select `.backup` files located in `./data/backups`
+## Lưu Ý
+- Thay mật khẩu mặc định (`postgres`) bằng mật khẩu an toàn trong môi trường sản xuất.
+- Điều chỉnh giá trị `PGPOOL_BACKEND_WEIGHT` trong `docker-compose.yml` để tùy chỉnh phân phối tải.
