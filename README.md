@@ -4,16 +4,13 @@ Kho này chứa cấu hình Docker Compose để triển khai cụm PostgreSQL 1
 
 ## Các Tệp
 - `docker-compose.yml`: Định nghĩa các dịch vụ primary, replica và Pgpool-II.
+- `pgpool.conf`: Cấu hình Pgpool-II để định tuyến write đến primary và read đến các replica.
 - `init-primary.sh`: Cấu hình node primary cho replication.
 - `init-replica.sh`: Cấu hình các node replica cho streaming replication.
 
 ## Hướng Dẫn Cài Đặt
 1. Triển khai stack trong Portainer bằng tệp `docker-compose.yml`.
-2. Đảm bảo các tệp `init-primary.sh` và `init-replica.sh` nằm trong cùng thư mục với tệp Compose.
-3. Kết nối đến Pgpool-II qua cổng `9999` để thực hiện các truy vấn được cân bằng tải.
-
-## Kiểm Tra Trạng Thái
-- Tất cả các dịch vụ có `healthcheck` sử dụng `pg_isready` (cho PostgreSQL) hoặc `pgpool` (cho Pgpool-II).
-- Xem trạng thái trong Portainer hoặc chạy lệnh:
-  ```bash
-  docker ps
+2. Đảm bảo các tệp `pgpool.conf`, `init-primary.sh` và `init-replica.sh` nằm trong cùng thư mục với tệp Compose.
+3. Kết nối đến Pgpool-II qua cổng `9999` để thực hiện các truy vấn được cân bằng tải:
+   ```bash
+   psql -h <docker-host> -p 9999 -U postgres

@@ -14,6 +14,8 @@ services:
       - PGPOOL_ENABLE_LOAD_BALANCING=yes
       - PGPOOL_SR_CHECK_USER=postgres
       - PGPOOL_SR_CHECK_PASSWORD=postgres
+    volumes:
+      - ./pgpool.conf:/opt/bitnami/pgpool/conf/pgpool.conf
     depends_on:
       primary:
         condition: service_healthy
