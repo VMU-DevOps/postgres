@@ -11,10 +11,6 @@ services:
       - PGPOOL_ADMIN_USERNAME=admin
       - PGPOOL_ADMIN_PASSWORD=admin
       - PGPOOL_BACKEND_NODES=primary:5432,replica1:5432,replica2:5432,replica3:5432
-      - PGPOOL_BACKEND_WEIGHT0=1
-      - PGPOOL_BACKEND_WEIGHT1=1
-      - PGPOOL_BACKEND_WEIGHT2=1
-      - PGPOOL_BACKEND_WEIGHT3=1
       - PGPOOL_ENABLE_LOAD_BALANCING=yes
       - PGPOOL_SR_CHECK_USER=postgres
       - PGPOOL_SR_CHECK_PASSWORD=postgres
@@ -33,7 +29,9 @@ services:
       test: ["CMD", "pgpool", "-nbutcher", "show", "-n"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
 
   primary:
     image: postgres:17
