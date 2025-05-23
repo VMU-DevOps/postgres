@@ -1,188 +1,126 @@
+version: '3.9'
+
 services:
-  # Primary PostgreSQL node
   postgres-primary:
-    image: postgres:17
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: postgres-primary
+    restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=securepassword
-      - POSTGRES_DB=mydb
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: appdb
     volumes:
-      - postgres-primary-data:/var/lib/postgresql/data
-      - ./init-primary.sql:/docker-entrypoint-initdb.d/init-primary.sql:ro
-    ports:
-      - "5432:5432"
+      - primary-data:/var/lib/postgresql/data
     networks:
-      - postgres-net
+      - pgnet
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Replica 1
   postgres-replica1:
     image: postgres:17
     container_name: postgres-replica1
+    restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=securepassword
-      - POSTGRES_DB=mydb
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres-replica1-data:/var/lib/postgresql/data
-      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql:ro
-      - ./replication.conf:/var/lib/postgresql/data/replication.conf:ro
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
     depends_on:
       - postgres-primary
+    command: >
+      bash -c "
+        until pg_isready -h postgres-primary -U admin; do sleep 2; done &&         pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U admin -Fp -Xs -P -R"
     networks:
-      - postgres-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgnet
+    volumes:
+      - replica1-data:/var/lib/postgresql/data
 
-  # Replica 2
   postgres-replica2:
     image: postgres:17
     container_name: postgres-replica2
+    restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=securepassword
-      - POSTGRES_DB=mydb
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres-replica2-data:/var/lib/postgresql/data
-      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql:ro
-      - ./replication.conf:/var/lib/postgresql/data/replication.conf:ro
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
     depends_on:
       - postgres-primary
+    command: >
+      bash -c "
+        until pg_isready -h postgres-primary -U admin; do sleep 2; done &&         pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U admin -Fp -Xs -P -R"
     networks:
-      - postgres-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgnet
+    volumes:
+      - replica2-data:/var/lib/postgresql/data
 
-  # Replica 3
   postgres-replica3:
     image: postgres:17
     container_name: postgres-replica3
+    restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=securepassword
-      - POSTGRES_DB=mydb
-      - PGDATA=/var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres-replica3-data:/var/lib/postgresql/data
-      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql:ro
-      - ./replication.conf:/var/lib/postgresql/data/replication.conf:ro
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
     depends_on:
       - postgres-primary
+    command: >
+      bash -c "
+        until pg_isready -h postgres-primary -U admin; do sleep 2; done &&         pg_basebackup -h postgres-primary -D /var/lib/postgresql/data -U admin -Fp -Xs -P -R"
     networks:
-      - postgres-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgnet
+    volumes:
+      - replica3-data:/var/lib/postgresql/data
 
-  # Pgpool-II for load balancing
   pgpool:
-    image: bitnami/pgpool:4.5.0
+    image: bitnami/pgpool:latest
     container_name: pgpool
+    restart: always
     environment:
       - PGPOOL_BACKEND_NODES=0:postgres-primary:5432,1:postgres-replica1:5432,2:postgres-replica2:5432,3:postgres-replica3:5432
-      - PGPOOL_SR_CHECK_USER=replicator
-      - PGPOOL_SR_CHECK_PASSWORD=replicatorpassword
-      - PGPOOL_HEALTH_CHECK_USER=admin
-      - PGPOOL_HEALTH_CHECK_PASSWORD=securepassword
+      - PGPOOL_SR_CHECK_USER=admin
+      - PGPOOL_SR_CHECK_PASSWORD=123456
+      - PGPOOL_ENABLE_LDAP=no
       - PGPOOL_POSTGRES_USERNAME=admin
-      - PGPOOL_POSTGRES_PASSWORD=securepassword
-      - PGPOOL_ADMIN_USERNAME=pgpool_admin
-      - PGPOOL_ADMIN_PASSWORD=pgpool_securepassword
-      - PGPOOL_ENABLE_LOAD_BALANCE=yes
-      - PGPOOL_NUM_INIT_CHILDREN=50
-      - PGPOOL_MAX_POOL=4
-    ports:
-      - "9999:9999"
-    depends_on:
-      - postgres-primary
-      - postgres-replica1
-      - postgres-replica2
-      - postgres-replica3
+      - PGPOOL_POSTGRES_PASSWORD=123456
+      - PGPOOL_ADMIN_USERNAME=admin
+      - PGPOOL_ADMIN_PASSWORD=123456
     networks:
-      - postgres-net
-    healthcheck:
-      test: ["CMD-SHELL", "pgpool -n -a /etc/pgpool-II/pcp.conf -m fast status"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgnet
+    ports:
+      - "5433:5432"
 
-  # PgBouncer for connection pooling
   pgbouncer:
-    image: bitnami/pgbouncer:latest
+    image: edoburu/pgbouncer
     container_name: pgbouncer
+    restart: always
     environment:
-      - POSTGRESQL_HOST=pgpool
-      - POSTGRESQL_PORT=9999
-      - POSTGRESQL_USERNAME=admin
-      - POSTGRESQL_PASSWORD=securepassword
-      - POSTGRESQL_DATABASE=mydb
-      - PGBOUNCER_AUTH_TYPE=md5
-      - PGBOUNCER_AUTH_FILE=/opt/bitnami/pgbouncer/conf/userlist.txt
-      - PGBOUNCER_LISTEN_ADDR=0.0.0.0
-      - PGBOUNCER_LISTEN_PORT=6432
-      - PGBOUNCER_MAX_CLIENT_CONN=100
-      - PGBOUNCER_POOL_MODE=transaction
-    volumes:
-      - ./pgbouncer.ini:/opt/bitnami/pgbouncer/conf/pgbouncer.ini:ro
-      - ./userlist.txt:/opt/bitnami/pgbouncer/conf/userlist.txt:ro
+      DB_USER: admin
+      DB_PASSWORD: 123456
+      DB_HOST: pgpool
+      DB_PORT: 5432
     ports:
       - "6432:6432"
-    depends_on:
-      - pgpool
     networks:
-      - postgres-net
-    healthcheck:
-      test: ["CMD-SHELL", "psql -h pgbouncer -p 6432 -U admin pgbouncer -c 'SHOW POOLS'"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - pgnet
 
-  # pgAdmin for web-based management
   pgadmin:
-    image: dpage/pgadmin4:8
+    image: dpage/pgadmin4
     container_name: pgadmin
+    restart: always
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@example.com
-      - PGADMIN_DEFAULT_PASSWORD=adminpassword
-      - PGADMIN_CONFIG_SERVER_MODE=False
-      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: 123456
     ports:
       - "8080:80"
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      - pgbouncer
     networks:
-      - postgres-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/login"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-networks:
-  postgres-net:
-    driver: bridge
+      - pgnet
 
 volumes:
-  postgres-primary-data:
-  postgres-replica1-data:
-  postgres-replica2-data:
-  postgres-replica3-data:
-  pgadmin-data:
+  primary-data:
+  replica1-data:
+  replica2-data:
+  replica3-data:
+
+networks:
+  pgnet:

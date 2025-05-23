@@ -1,107 +1,49 @@
-# PostgreSQL High Availability Stack
+# PostgreSQL HA Cluster with Pgpool-II, PgBouncer and pgAdmin
 
-This repository contains a Docker Compose configuration for deploying a high-availability PostgreSQL 17 cluster with load balancing and connection pooling, manageable via Portainer. The stack includes:
+This project sets up a highly available PostgreSQL cluster using Docker Compose with the following components:
 
-- **1 Primary PostgreSQL node**
-- **3 Replica PostgreSQL nodes** (using streaming replication)
-- **Pgpool-II** for load balancing read queries and routing write queries to the primary
-- **PgBouncer** (using Bitnami image) for connection pooling
-- **pgAdmin** for web-based database management
+- **PostgreSQL 17**: 1 primary and 3 replicas
+- **Pgpool-II**: Load balancer for PostgreSQL with read/write split
+- **PgBouncer**: Lightweight connection pooler
+- **pgAdmin 4**: Web-based UI for database management
 
-## Prerequisites
+## Structure
+```
+project-root/
+├── docker-compose.yml       # Docker Compose Stack
+├── Dockerfile               # Build file for postgres-primary
+├── pg_hba.conf              # Config for allowing replication access
+└── README.md                # This file
+```
 
-- Docker and Docker Compose installed on the host
-- Portainer installed for stack deployment
-- Git installed to clone the repository
-- Basic knowledge of PostgreSQL and Docker
+## Usage
+1. Make sure Docker and Docker Compose are installed.
 
-## Setup Instructions
+2. Clone this repository and navigate into the folder:
+```bash
+git clone <your-repo-url>
+cd project-root
+```
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/your-username/postgres-ha-stack.git
-   cd postgres-ha-stack
+3. Build and run the stack:
+```bash
+docker compose up --build -d
+```
 
+4. Access pgAdmin:
+- URL: http://localhost:8080
+- Email: `admin@example.com`
+- Password: `123456`
 
-Update Passwords (Recommended for security):
+5. Connect through PgBouncer (recommended for clients):
+- Host: `localhost`
+- Port: `6432`
+- User: `admin`
+- Password: `123456`
 
-Edit docker-compose.yml to replace securepassword, pgpool_securepassword, and adminpassword with strong, unique passwords.
-Update userlist.txt with MD5-hashed passwords for admin and pgpool_admin. Generate MD5 passwords using:echo -n "yourpassword" | md5sum
+## Notes
+- Replication works via streaming replication using `pg_basebackup`.
+- Ensure `primary-data` volume is removed if you want to reinitialize primary with new pg_hba.conf.
 
-Then format as: "username" "md5<hashed_password>"
-
-
-Deploy via Portainer:
-
-Log in to Portainer.
-Navigate to Stacks > Add Stack.
-Choose the Git Repository option.
-Enter the repository URL: https://github.com/your-username/postgres-ha-stack.git
-Set the Compose Path to docker-compose.yml.
-Deploy the stack.
-
-
-Alternative: Deploy via Docker Compose:If not using Portainer, run:
-docker-compose up -d
-
-
-Initialize Replication:
-
-After deployment, initialize replicas with pg_basebackup:docker exec postgres-replica1 pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -P --wal-method=stream
-
-Repeat for postgres-replica2 and postgres-replica3.
-
-
-
-Accessing Services
-
-PostgreSQL: Connect via PgBouncer at localhost:6432 (or host IP) with:postgresql://admin:securepassword@localhost:6432/mydb
-
-
-pgAdmin: Access at http://localhost:8080 with credentials admin@example.com/adminpassword.
-Pgpool-II Admin: Use psql -h localhost -p 9999 -U pgpool_admin pcp (password: pgpool_securepassword).
-
-Verifying Setup
-
-Check Replication:
-
-On the primary node:SELECT * FROM pg_stat_replication;
-
-
-On replicas (connect directly to their ports if exposed):SELECT pg_is_in_recovery();
-
-
-
-
-Test Load Balancing:
-
-Run read queries (e.g., SELECT * FROM users) through PgBouncer (localhost:6432) to confirm Pgpool-II distributes them across replicas.
-Run write queries (e.g., INSERT INTO users) to confirm they go to the primary.
-
-
-Monitor Pgpool-II:
-psql -h localhost -p 9999 -U pgpool_admin pcp -c 'SHOW pool_nodes'
-
-
-Monitor PgBouncer:
-psql -h localhost -p 6432 -U admin pgbouncer -c 'SHOW POOLS'
-
-
-
-Notes
-
-Replication Setup: The init-replica.sql creates a replication slot. Use pg_basebackup to initialize replicas from the primary.
-Security: Replace default passwords and use secure ones in production. Ensure userlist.txt contains correct MD5-hashed passwords.
-Scalability: Adjust PGPOOL_NUM_INIT_CHILDREN and PGBOUNCER_MAX_CLIENT_CONN based on expected load.
-High Availability: For production, consider running multiple Pgpool-II instances and using a load balancer like HAProxy.
-PgBouncer Image: This stack uses bitnami/pgbouncer:latest to avoid authentication issues with private repositories.
-
-Troubleshooting
-
-If containers fail to start, check logs with docker logs <container_name>.
-Ensure the postgres-net network is created and all services are connected.
-Verify that volumes (postgres-primary-data, etc.) are accessible.
-If replication fails, check replication.conf and pg_hba.conf settings.
-
-License
-MIT License```
+## License
+MIT or your chosen license.
