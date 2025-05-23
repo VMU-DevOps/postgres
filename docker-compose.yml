@@ -10,7 +10,7 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres-primary-data:/var/lib/postgresql/data
-      - ./init-primary.sql:/docker-entrypoint-initdb.d/init-primary.sql
+      - ./init-primary.sql:/docker-entrypoint-initdb.d/init-primary.sql:ro
     ports:
       - "5432:5432"
     networks:
@@ -32,8 +32,8 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres-replica1-data:/var/lib/postgresql/data
-      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
-      - ./replication.conf:/var/lib/postgresql/data/replication.conf
+      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql:ro
+      - ./replication.conf:/var/lib/postgresql/data/replication.conf:ro
     depends_on:
       - postgres-primary
     networks:
@@ -55,8 +55,8 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres-replica2-data:/var/lib/postgresql/data
-      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
-      - ./replication.conf:/var/lib/postgresql/data/replication.conf
+      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql:ro
+      - ./replication.conf:/var/lib/postgresql/data/replication.conf:ro
     depends_on:
       - postgres-primary
     networks:
@@ -78,8 +78,8 @@ services:
       - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - postgres-replica3-data:/var/lib/postgresql/data
-      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
-      - ./replication.conf:/var/lib/postgresql/data/replication.conf
+      - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql:ro
+      - ./replication.conf:/var/lib/postgresql/data/replication.conf:ro
     depends_on:
       - postgres-primary
     networks:
@@ -139,8 +139,8 @@ services:
       - PGBOUNCER_MAX_CLIENT_CONN=100
       - PGBOUNCER_POOL_MODE=transaction
     volumes:
-      - ./pgbouncer.ini:/opt/bitnami/pgbouncer/conf/pgbouncer.ini
-      - ./userlist.txt:/opt/bitnami/pgbouncer/conf/userlist.txt
+      - ./pgbouncer.ini:/opt/bitnami/pgbouncer/conf/pgbouncer.ini:ro
+      - ./userlist.txt:/opt/bitnami/pgbouncer/conf/userlist.txt:ro
     ports:
       - "6432:6432"
     depends_on:
