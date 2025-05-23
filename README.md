@@ -5,7 +5,7 @@ This repository contains a Docker Compose configuration for deploying a high-ava
 - **1 Primary PostgreSQL node**
 - **3 Replica PostgreSQL nodes** (using streaming replication)
 - **Pgpool-II** for load balancing read queries and routing write queries to the primary
-- **PgBouncer** for connection pooling
+- **PgBouncer** (using Bitnami image) for connection pooling
 - **pgAdmin** for web-based database management
 
 ## Prerequisites
@@ -43,6 +43,13 @@ Deploy the stack.
 
 Alternative: Deploy via Docker Compose:If not using Portainer, run:
 docker-compose up -d
+
+
+Initialize Replication:
+
+After deployment, initialize replicas with pg_basebackup:docker exec postgres-replica1 pg_basebackup -h postgres-primary -U replicator -D /var/lib/postgresql/data -P --wal-method=stream
+
+Repeat for postgres-replica2 and postgres-replica3.
 
 
 
@@ -83,16 +90,18 @@ psql -h localhost -p 6432 -U admin pgbouncer -c 'SHOW POOLS'
 
 Notes
 
-Replication Setup: The init-replica.sql is a placeholder. For production, manually set up streaming replication using pg_basebackup or similar to initialize replicas from the primary.
-Security: Replace default passwords and use secure ones in production.
+Replication Setup: The init-replica.sql creates a replication slot. Use pg_basebackup to initialize replicas from the primary.
+Security: Replace default passwords and use secure ones in production. Ensure userlist.txt contains correct MD5-hashed passwords.
 Scalability: Adjust PGPOOL_NUM_INIT_CHILDREN and PGBOUNCER_MAX_CLIENT_CONN based on expected load.
 High Availability: For production, consider running multiple Pgpool-II instances and using a load balancer like HAProxy.
+PgBouncer Image: This stack uses bitnami/pgbouncer:latest to avoid authentication issues with private repositories.
 
 Troubleshooting
 
 If containers fail to start, check logs with docker logs <container_name>.
 Ensure the postgres-net network is created and all services are connected.
 Verify that volumes (postgres-primary-data, etc.) are accessible.
+If replication fails, check replication.conf and pg_hba.conf settings.
 
 License
 MIT License```

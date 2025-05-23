@@ -33,6 +33,7 @@ services:
     volumes:
       - postgres-replica1-data:/var/lib/postgresql/data
       - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
+      - ./replication.conf:/var/lib/postgresql/data/replication.conf
     depends_on:
       - postgres-primary
     networks:
@@ -55,6 +56,7 @@ services:
     volumes:
       - postgres-replica2-data:/var/lib/postgresql/data
       - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
+      - ./replication.conf:/var/lib/postgresql/data/replication.conf
     depends_on:
       - postgres-primary
     networks:
@@ -77,6 +79,7 @@ services:
     volumes:
       - postgres-replica3-data:/var/lib/postgresql/data
       - ./init-replica.sql:/docker-entrypoint-initdb.d/init-replica.sql
+      - ./replication.conf:/var/lib/postgresql/data/replication.conf
     depends_on:
       - postgres-primary
     networks:
