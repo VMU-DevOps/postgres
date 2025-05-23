@@ -10,10 +10,12 @@ This project sets up a highly available PostgreSQL cluster using Docker Compose 
 ## Structure
 ```
 project-root/
-├── docker-compose.yml       # Docker Compose Stack
-├── Dockerfile               # Build file for postgres-primary
-├── pg_hba.conf              # Config for allowing replication access
-└── README.md                # This file
+├── docker-compose.yml
+├── Dockerfile
+├── pg_hba.conf
+├── pgbouncer.ini
+├── userlist.txt
+└── README.md
 ```
 
 ## Usage
@@ -44,6 +46,3 @@ docker compose up --build -d
 ## Notes
 - Replication works via streaming replication using `pg_basebackup`.
 - Ensure `primary-data` volume is removed if you want to reinitialize primary with new pg_hba.conf.
-
-## License
-MIT or your chosen license.

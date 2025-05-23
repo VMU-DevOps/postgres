@@ -103,6 +103,9 @@ services:
       - "6432:6432"
     networks:
       - pgnet
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./userlist.txt:/etc/pgbouncer/userlist.txt
 
   pgadmin:
     image: dpage/pgadmin4
