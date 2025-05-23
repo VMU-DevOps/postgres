@@ -132,22 +132,23 @@ services:
 
   # PgBouncer for connection pooling
   pgbouncer:
-    image: edb/pgbouncer:latest
+    image: bitnami/pgbouncer:latest
     container_name: pgbouncer
     environment:
-      - DB_HOST=pgpool
-      - DB_PORT=9999
-      - DB_USER=admin
-      - DB_PASSWORD=securepassword
+      - POSTGRESQL_HOST=pgpool
+      - POSTGRESQL_PORT=9999
+      - POSTGRESQL_USERNAME=admin
+      - POSTGRESQL_PASSWORD=securepassword
+      - POSTGRESQL_DATABASE=mydb
       - PGBOUNCER_AUTH_TYPE=md5
-      - PGBOUNCER_AUTH_FILE=/etc/pgbouncer/userlist.txt
+      - PGBOUNCER_AUTH_FILE=/opt/bitnami/pgbouncer/conf/userlist.txt
       - PGBOUNCER_LISTEN_ADDR=0.0.0.0
       - PGBOUNCER_LISTEN_PORT=6432
       - PGBOUNCER_MAX_CLIENT_CONN=100
       - PGBOUNCER_POOL_MODE=transaction
     volumes:
-      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
-      - ./userlist.txt:/etc/pgbouncer/userlist.txt
+      - ./pgbouncer.ini:/opt/bitnami/pgbouncer/conf/pgbouncer.ini
+      - ./userlist.txt:/opt/bitnami/pgbouncer/conf/userlist.txt
     ports:
       - "6432:6432"
     depends_on:
