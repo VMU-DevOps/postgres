@@ -1,23 +1,98 @@
-# Cụm PostgreSQL 17 Cân Bằng Tải
+# PostgreSQL High Availability Stack
 
-Kho này chứa cấu hình Docker Compose để triển khai cụm PostgreSQL 17 với 1 node primary và 3 node replica, được cân bằng tải bằng Pgpool-II. Cấu hình này được thiết kế để triển khai qua Portainer.
+This repository contains a Docker Compose configuration for deploying a high-availability PostgreSQL 17 cluster with load balancing and connection pooling, manageable via Portainer. The stack includes:
 
-## Các Tệp
-- `docker-compose.yml`: Định nghĩa các dịch vụ primary, replica và Pgpool-II.
-- `pgpool-conf/pgpool.conf`: Cấu hình Pgpool-II để định tuyến write đến primary và read đến các replica.
-- `init-primary.sh`: Cấu hình node primary cho replication.
-- `init-replica.sh`: Cấu hình các node replica cho streaming replication.
+- **1 Primary PostgreSQL node**
+- **3 Replica PostgreSQL nodes** (using streaming replication)
+- **Pgpool-II** for load balancing read queries and routing write queries to the primary
+- **PgBouncer** for connection pooling
+- **pgAdmin** for web-based database management
 
-## Hướng Dẫn Cài Đặt
-1. Triển khai stack trong Portainer bằng tệp `docker-compose.yml`.
-2. Đảm bảo các thư mục `pgpool-conf` (chứa `pgpool.conf`), và các tệp `init-primary.sh`, `init-replica.sh` nằm trong cùng thư mục với tệp Compose.
-3. Kết nối đến Pgpool-II qua cổng `9999` để thực hiện các truy vấn được cân bằng tải:
+## Prerequisites
+
+- Docker and Docker Compose installed on the host
+- Portainer installed for stack deployment
+- Git installed to clone the repository
+- Basic knowledge of PostgreSQL and Docker
+
+## Setup Instructions
+
+1. **Clone the Repository**:
    ```bash
-   psql -h <docker-host> -p 15432 -U postgres
+   git clone https://github.com/your-username/postgres-ha-stack.git
+   cd postgres-ha-stack
 
-## Kiểm Tra Định Tuyến Write/Read
-1. Write: Chạy truy vấn qua cổng 9999. Truy vấn này sẽ được định tuyến đến primary. 
-INSERT INTO test_table (value) VALUES ('Test');
 
-2. Read: Chạy truy vấn qua cổng 9999. Truy vấn này sẽ được phân phối đến các replica.
-SELECT * FROM test_table; 
+Update Passwords (Recommended for security):
+
+Edit docker-compose.yml to replace securepassword, pgpool_securepassword, and adminpassword with strong, unique passwords.
+Update userlist.txt with MD5-hashed passwords for admin and pgpool_admin. Generate MD5 passwords using:echo -n "yourpassword" | md5sum
+
+Then format as: "username" "md5<hashed_password>"
+
+
+Deploy via Portainer:
+
+Log in to Portainer.
+Navigate to Stacks > Add Stack.
+Choose the Git Repository option.
+Enter the repository URL: https://github.com/your-username/postgres-ha-stack.git
+Set the Compose Path to docker-compose.yml.
+Deploy the stack.
+
+
+Alternative: Deploy via Docker Compose:If not using Portainer, run:
+docker-compose up -d
+
+
+
+Accessing Services
+
+PostgreSQL: Connect via PgBouncer at localhost:6432 (or host IP) with:postgresql://admin:securepassword@localhost:6432/mydb
+
+
+pgAdmin: Access at http://localhost:8080 with credentials admin@example.com/adminpassword.
+Pgpool-II Admin: Use psql -h localhost -p 9999 -U pgpool_admin pcp (password: pgpool_securepassword).
+
+Verifying Setup
+
+Check Replication:
+
+On the primary node:SELECT * FROM pg_stat_replication;
+
+
+On replicas (connect directly to their ports if exposed):SELECT pg_is_in_recovery();
+
+
+
+
+Test Load Balancing:
+
+Run read queries (e.g., SELECT * FROM users) through PgBouncer (localhost:6432) to confirm Pgpool-II distributes them across replicas.
+Run write queries (e.g., INSERT INTO users) to confirm they go to the primary.
+
+
+Monitor Pgpool-II:
+psql -h localhost -p 9999 -U pgpool_admin pcp -c 'SHOW pool_nodes'
+
+
+Monitor PgBouncer:
+psql -h localhost -p 6432 -U admin pgbouncer -c 'SHOW POOLS'
+
+
+
+Notes
+
+Replication Setup: The init-replica.sql is a placeholder. For production, manually set up streaming replication using pg_basebackup or similar to initialize replicas from the primary.
+Security: Replace default passwords and use secure ones in production.
+Scalability: Adjust PGPOOL_NUM_INIT_CHILDREN and PGBOUNCER_MAX_CLIENT_CONN based on expected load.
+High Availability: For production, consider running multiple Pgpool-II instances and using a load balancer like HAProxy.
+
+Troubleshooting
+
+If containers fail to start, check logs with docker logs <container_name>.
+Ensure the postgres-net network is created and all services are connected.
+Verify that volumes (postgres-primary-data, etc.) are accessible.
+
+License
+MIT License```
