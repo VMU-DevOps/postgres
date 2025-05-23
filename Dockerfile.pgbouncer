@@ -1,0 +1,4 @@
+FROM edoburu/pgbouncer
+
+COPY pgbouncer/pgbouncer.ini /etc/pgbouncer/pgbouncer.ini
+COPY pgbouncer/userlist.txt /etc/pgbouncer/userlist.txt
