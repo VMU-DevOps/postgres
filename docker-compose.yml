@@ -92,22 +92,11 @@ services:
     image: bitnami/pgpool:4.5.0
     container_name: pgpool
     environment:
-      - PGPOOL_BACKEND_HOST0=postgres-primary
-      - PGPOOL_BACKEND_PORT0=5432
-      - PGPOOL_BACKEND_WEIGHT0=1
-      - PGPOOL_BACKEND_FLAG0=ALWAYS_PRIMARY|DISALLOW_TO_FAILOVER
-      - PGPOOL_BACKEND_HOST1=postgres-replica1
-      - PGPOOL_BACKEND_PORT1=5432
-      - PGPOOL_BACKEND_WEIGHT1=1
-      - PGPOOL_BACKEND_FLAG1=DISALLOW_TO_FAILOVER
-      - PGPOOL_BACKEND_HOST2=postgres-replica2
-      - PGPOOL_BACKEND_PORT2=5432
-      - PGPOOL_BACKEND_WEIGHT2=1
-      - PGPOOL_BACKEND_FLAG2=DISALLOW_TO_FAILOVER
-      - PGPOOL_BACKEND_HOST3=postgres-replica3
-      - PGPOOL_BACKEND_PORT3=5432
-      - PGPOOL_BACKEND_WEIGHT3=1
-      - PGPOOL_BACKEND_FLAG3=DISALLOW_TO_FAILOVER
+      - PGPOOL_BACKEND_NODES=0:postgres-primary:5432,1:postgres-replica1:5432,2:postgres-replica2:5432,3:postgres-replica3:5432
+      - PGPOOL_SR_CHECK_USER=replicator
+      - PGPOOL_SR_CHECK_PASSWORD=replicatorpassword
+      - PGPOOL_HEALTH_CHECK_USER=admin
+      - PGPOOL_HEALTH_CHECK_PASSWORD=securepassword
       - PGPOOL_POSTGRES_USERNAME=admin
       - PGPOOL_POSTGRES_PASSWORD=securepassword
       - PGPOOL_ADMIN_USERNAME=pgpool_admin
