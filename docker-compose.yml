@@ -11,9 +11,9 @@ services:
       POSTGRES_INITDB_ARGS: "--timezone=${TZ:-Asia/Ho_Chi_Minh}"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./data/backups:/backups
+      - /data/backups/postgres:/backups
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT}:5432"
 
   postgres-ui:
     image: dpage/pgadmin4
@@ -21,17 +21,32 @@ services:
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@vimaru.edu.vn}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-1}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-changeme}
+      PGADMIN_USER_DIR: admin_vimaru.edu.vn
     volumes:
       - pgadmin-data:/var/lib/pgadmin
-      - ./data/backups:/backups
-      - ./pgadmin-init.sh:/pgadmin-init.sh
+      - /data/backups/postgres:/backups
+      - /data/backups/postgres/.pgadmin-init.sh:/pgadmin-init.sh 
     ports:
-      - "${PGADMIN_PORT:-5431}:80"
+      - "${PGADMIN_PORT}:80"
     depends_on:
       - postgres-db
-    command: ["/bin/sh", "-c", "echo ✅ Đã chạy command! && /bin/sh /pgadmin-init.sh"]
+
+  postgresus:
+    container_name: postgresus
+    image: rostislavdugin/postgresus:latest
+    ports:
+      - "${POSTGRESUS_PORT}:4005"
+    volumes:
+      - postgresus-data:/postgresus-data
+      - /data/backups/postgres:/backups
+    environment:
+      POSTGRESUS_BACKUP_DIR: /backups
+    restart: unless-stopped
+    depends_on:
+      - postgres-db
 
 volumes:
   postgres-data:
   pgadmin-data:
+  postgresus-data:

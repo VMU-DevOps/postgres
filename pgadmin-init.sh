@@ -1,5 +1,3 @@
-sudo nano /data/configs/pgadmin-init.sh 
-
 # Xác định thư mục storage cho user của pgAdmin
 if [ -n "$PGADMIN_USER_DIR" ]; then
   USER_DIR="$PGADMIN_USER_DIR"
@@ -37,9 +35,3 @@ chown -R 5050:5050 "$STORAGE_PATH" 2>/dev/null || true
 # 3) Tạo symlink backups_link -> /backups
 LINK_PATH="$STORAGE_PATH/$LINK_NAME"
 [ -e "$LINK_PATH" ] || ln -s "$BACKUPS_MOUNT" "$LINK_PATH"
-
-
-sudo chmod +x /data/configs/pgadmin-init.sh
-
-sudo chown -R 5050:5050 /data/backups/postgres
-sudo chmod -R 775 /data/backups/postgres
